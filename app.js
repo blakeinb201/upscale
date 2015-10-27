@@ -13,19 +13,27 @@ var azure = require('azure');
 var ffmpeg = require('fluent-ffmpeg');
 //var command = ffmpeg();
 
-
 var fs = require('fs');
 
 var helpme = require('./helpme.js');
 
-var BLOBuser = 'upscaling';
-var BLOBpass = 'QUHYFD6PQo0Ky5DWp2FLaDFKYbcEVMWDStaN4H+90GqK7rPFR8G0So0MG2KJNc/FQxvxl5M2BrU6Ty6XMEEDzw==';
+var storageUser = 'upscaling';
+var storagePass = 'QUHYFD6PQo0Ky5DWp2FLaDFKYbcEVMWDStaN4H+90GqK7rPFR8G0So0MG2KJNc/FQxvxl5M2BrU6Ty6XMEEDzw==';
 
 var VIDEOCONTAINER = 'videofiles';
-
-var blobClient = azure.createBlobService(BLOBuser, BLOBpass);
-
+var blobClient = azure.createBlobService(storageUser, storagePass);
 var BLOB_BASE_URL = 'https://upscaling.blob.core.windows.net/videofiles/';
+
+var queueName = 'videoQueue';
+var queueService = azure.createQueueService(storageUser, storagePass);
+// https://upscaling.queue.core.windows.net/
+
+// check the queue exists before beginning
+queueService.createQueueIfNotExists(queueName, function(error) {
+	if (error) {
+		console.log(error);
+	}
+});
 
 //var MongoClient = mongodb.MongoClient;
 //var mongoURL = 'mongodb://CAB432:CAB432@ds048878.mongolab.com:48878/scalingMongo';
@@ -45,6 +53,20 @@ options = {
 url, callback
 */
 var NULLFUNC = function() {}
+
+
+// this creates a delay between function calls so the progress doesn't hit the DB too much
+function debounce(fn, delay) {
+	var timer = null;
+	return function () {
+		var context = this, args = arguments;
+		clearTimeout(timer);
+		timer = setTimeout(function () {
+			fn.apply(context, args);
+		}, delay);
+	};
+}
+
 
 var storage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -216,18 +238,6 @@ app.post('/upload', upload.single('video'), function (req, res) {
     res.status(204).end();
 });
 
-// this creates a delay between function calls so the progress doesn't hit the DB too much
-function debounce(fn, delay) {
-	var timer = null;
-	return function () {
-		var context = this, args = arguments;
-		clearTimeout(timer);
-		timer = setTimeout(function () {
-			fn.apply(context, args);
-		}, delay);
-	};
-}
-
 app.get('/Process/:id', function (req, res) {
 	var bID = req.params.id;
 	
@@ -254,11 +264,26 @@ app.get('/Process/:id', function (req, res) {
 	*/
 });
 
+app.post('/Process/:id', function (req, res) {
+	console.log(req.body);
+});
+
+app.get('/update/:id', function (req, res) {
+	var bID = req.params.id;
+	helpme.getVideo_DB({blobID: bID}, function(result) {
+		if (result && result[0].blobID == bID) {
+			res.json({progress: result[0].progress});
+		} else {
+			res.json({error: "No ID found"});
+		}
+	});
+});
+
 app.get('/download/:id', function (req, res) {
 	var bID = req.params.id;
 	
 	helpme.getVideo_DB({blobID: bID}, function(result) {
-		if (result) {
+		if (result && result[0].progress == 100) {
 			blobClient.getBlobProperties(VIDEOCONTAINER, result[0].filename, function (err, blobInfo) {
 				if (err === null) {
 					//console.log(blobInfo);
