@@ -24,7 +24,7 @@ var VIDEOCONTAINER = 'videofiles';
 var blobClient = azure.createBlobService(storageUser, storagePass);
 var BLOB_BASE_URL = 'https://upscaling.blob.core.windows.net/videofiles/';
 
-var queueName = 'videoQueue';
+var queueName = 'videoqueue';
 var queueService = azure.createQueueService(storageUser, storagePass);
 // https://upscaling.queue.core.windows.net/
 
@@ -38,20 +38,7 @@ queueService.createQueueIfNotExists(queueName, function(error) {
 //var MongoClient = mongodb.MongoClient;
 //var mongoURL = 'mongodb://CAB432:CAB432@ds048878.mongolab.com:48878/scalingMongo';
 
-/*
 
-var blobID = file.originalname.slice((file.originalname.lastIndexOf(".") - 1 >>> 0) + 2);
-
-options = {
-	BLOB_ID: blobID,
-	videoname: name,
-	originalname: oriname,
-	originalfile: 'url',
-	children: []
-}
-
-url, callback
-*/
 var NULLFUNC = function() {}
 
 
@@ -137,137 +124,124 @@ app.post('/upload', upload.single('video'), function (req, res) {
 	
 	var resolution = req.body.resolution;
 	console.log(req.body.resolution);
+	
 	// video object
+	
+	var ext = req.file.filename.slice((req.file.filename.lastIndexOf(".") - 1 >>> 0) + 2);;
+	
+	// parent ID
 	var bID = req.file.filename.substr(0, req.file.filename.lastIndexOf('.'));
+	// parent filename (ID + ext)
 	var fname = req.file.filename;
+	// parent original name without ext
 	var n = req.file.originalname.substr(0, req.file.originalname.lastIndexOf('.'));
+	// parent original name + ext
 	var oname = req.file.originalname;
+	// parent filesize
 	var fsize = req.file.size;
+	
+	var mbID = helpme.generatePseudoID(6);
+	var mfname = mbID + '.' + ext;
+	var mn = n;
+	var moname = oname;
 	
 	var vidObj = {
 		blobID: bID,
 		filename: fname,
 		originalname: oname,
 		name: n,//this is just the original name without ext.
-		filesize: fsize,
-		progress: 0,
-		modifiers: null//, req.body
-		//parent: null,//this is a root node
-		//children: []
+		//filesize: fsize,
+		progress: 100,
+		modifiers: null,//, req.body
+		parent: null,//this is a root node
+		children: [mbID]
 	};
-
+	
+	var modifiedVideo = {
+		blobID: mbID,
+		filename: mfname,
+		originalname: moname,
+		name: mn,
+		progress: 0,
+		modifiers: req.body,
+		parent: [bID],
+		children: []
+	};
+	
+	// original video object for future use.
 	helpme.addNewVideo_DB(vidObj, NULLFUNC);
 	
+	// new object being processed/
+	//helpme.addNewVideo_DB(modifiedVideo, NULLFUNC);
+	helpme.addNewVideo_DB(modifiedVideo, function() {
+		res.json({redirect: '/process/' + mbID});
+	});
+	
 	var filepath = req.file.path;
-	/*
-			.inputOptions([
-			'-sws_flags lanczos+full_chroma_inp',
-			//'-c:v libx264',
-			'-preset slow',
-			'-crf 18',
-			//'-b:a 128k',
-			'-c:a libmp3lame',
-			'-threads 0',
-			'-pix_fmt yuv420p',
-		])
-	*/
+	
+	// the ffmpeg object to process the request
 	var command = ffmpeg(filepath)
 		.size(resolution)
 		.on('progress', debounce(function(info) {
-				console.log('ping progress ' + Math.floor(info.percent) + '%');
-				// Math.floor(info.percent) maybe?
-				//helpme.updateVideo_DB({blobID: bID}, {progress: info.percent}, NULLFUNC);
+				console.log('[' + mbID + '] ' + Math.floor(info.percent) + '%');
+				helpme.updateVideo_DB({blobID: mbID}, {progress: Math.floor(info.percent)}, NULLFUNC);
 			}, 1000)
 		)
 		.on('end', function() {
-			console.log('done processing input stream');
-			var newpath = './processed/' + fname;
+			console.log('done processing [' + mbID + ']');
+			var newpath = './processed/' + mfname;
 			
-			/*
-			blobClient.createBlockBlobFromLocalFile(VIDEOCONTAINER, fname, newpath, function(error, result, response) {
+			blobClient.createBlockBlobFromLocalFile(VIDEOCONTAINER, mfname, newpath, function(error, result, response) {
 				if (!error) {
-					helpme.updateVideo_DB({blobID: bID}, {progress: 100}, NULLFUNC);
+					helpme.updateVideo_DB({blobID: mbID}, {progress: 100}, NULLFUNC);
 				} else console.log(error);
-			});*/
+			});
 		})
 		.on('error', function(err) {
 			console.log('an error happened: ' + err.message);
 		})
-		.save('./processed/' + fname);
+		.save('./processed/' + mfname);
+
+		
+	// upload the original file
 	
-	
-	/*
 	blobClient.createBlockBlobFromLocalFile(VIDEOCONTAINER, fname, filepath, function(error, result, response) {
 		if (!error) {
-			// file uploaded
-			console.log("file uploaded");
-			
-			var vidObj = {
-				blobID: bID,
-				filename: fname,
-				originalname: oname,
-				name: n,//this is just the original name without ext.
-				filesize: fsize,
-				progress: 0,
-				modifiers: null//,
-				//parent: null,//this is a root node
-				//children: []
-			};
-			
-			helpme.addNewVideo_DB(vidObj, NULLFUNC);
-			
-			//
-			var vidObj = {
-				id: 'dude',
-				filename: 'why',
-				inddd: 100
-			};
-			helpme.addNewVideo_DB(vidObj, function() {
-				helpme.updateVideo_DB({id:'dude'}, {filename:'when'}, function(nums) {
-					helpme.getVideo_DB({id:'dude'}, function(res) {
-						console.log(res);
-					});
-				});
-			});
-			//helpme.updateVideo_DB();
-			///
-			
 		} else console.log(error);
-	});*/
+	});
 	
-    res.status(204).end();
+    //res.status(204).end();
 });
 
-app.get('/Process/:id', function (req, res) {
+// view a file and select various options this will just display a loading bar is not finished
+app.get('/process/:id', function (req, res) {
+	/*
+	blobID: result[0].blobID,// ID
+	filename: result[0].filename,// filename (DI + ext)
+	originalname: result[0].originalname,// originalname + ext
+	name: result[0].name,// original name without ext
+	modifiers: result[0].modifiers,// what was done to this
+	parent: result[0].parent,// the parent that was modified to make this
+	children: result[0].children//,// any children made from this file
+	//link: BLOB_BASE_URL + result[0].filename
+	*/
 	var bID = req.params.id;
-	
 	helpme.getVideo_DB({blobID: bID}, function(result) {
 		if (result) {
 			res.render('process', {
-				title: result[0].name,
-				link: BLOB_BASE_URL + result[0].filename
+				videoObject: result[0]
 			});
 			//console.log(result[0].name);
 		}
 	});
-	
-	/*
-	blobClient.getBlobProperties(containerName, req.params.id, function (err, blobInfo) {
-		if (err === null) {
-			res.header('content-type', blobInfo.contentType);
-			res.header('content-disposition', 'attachment; filename=' + blobInfo.metadata.filename);
-			blobClient.getBlobToStream(containerName, req.params.id, res, function () { });
-		} else {
-			//helpers.renderError(res);
-		}
-	});
-	*/
 });
 
-app.post('/Process/:id', function (req, res) {
+// start a new job of the specified video file
+app.post('/process/:id', function (req, res) {
 	console.log(req.body);
 });
 
+// this is for ajax posts to update the progress of a job
 app.get('/update/:id', function (req, res) {
 	var bID = req.params.id;
 	helpme.getVideo_DB({blobID: bID}, function(result) {
@@ -279,37 +253,29 @@ app.get('/update/:id', function (req, res) {
 	});
 });
 
+// the user wants to download the file
 app.get('/download/:id', function (req, res) {
 	var bID = req.params.id;
-	
 	helpme.getVideo_DB({blobID: bID}, function(result) {
 		if (result && result[0].progress == 100) {
 			blobClient.getBlobProperties(VIDEOCONTAINER, result[0].filename, function (err, blobInfo) {
 				if (err === null) {
-					//console.log(blobInfo);
 					res.header('content-type', blobInfo.contentType);
 					res.header('content-disposition', 'attachment; filename=' + result[0].originalname);
 					blobClient.getBlobToStream(VIDEOCONTAINER, result[0].filename, res, function () { });
 				} else {
+					console.log(err);
 					//helpers.renderError(res);
 				}
 			});
 		}
 	});
-	
-	/*
-	blobClient.getBlobProperties(containerName, req.params.id, function (err, blobInfo) {
-		if (err === null) {
-			res.header('content-type', blobInfo.contentType);
-			res.header('content-disposition', 'attachment; filename=' + blobInfo.metadata.filename);
-			blobClient.getBlobToStream(containerName, req.params.id, res, function () { });
-		} else {
-			//helpers.renderError(res);
-		}
-	});
-	*/
 });
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////// NOT IMPORTANT JUST IGNORE ///////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

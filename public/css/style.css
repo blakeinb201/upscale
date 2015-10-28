@@ -1,9 +1,69 @@
 body {
-	margin: auto;
-	padding: 50px;
-	font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+	background: #099;
 }
 
-a {
-	color: #00B7FF;
+#content {
+	width: 100%;
+	height: 100%;
+	
+	display: flex;
+	justify-content: center;
+	align-content: center;
+}
+
+#title {
+	float: left;
+	font-family: Franklin Gothic;
+	font-size: 32px;
+}
+
+#home {
+	float: left;
+}
+
+#download {
+	float: left;
+}
+
+#home, #download {
+	margin: 10px;
+	width: 30px;
+	height: 30px;
+}
+
+#header img {
+	max-height: 100%;
+}
+
+#header {
+	width: 100%;
+	height: 60px;
+	position: absolute;
+	top: 0;
+	left: 0;
+	background: #FFFFFF;
+	
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+#header-content {
+	width: 90%;
+	height: 50px;
+	
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	
+
+
+}
+
+#main-body {
+	position: relative;
+	top: 100px;
+	background: #FFFFFF;
+	width: 500px;
+	height: 600px;
 }
