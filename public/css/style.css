@@ -1,6 +1,33 @@
-body {
-	background: #099;
+body, html {
+	height: 100%;
+	margin: 0;
+	padding: 0;
 }
+/*
+
+#2A363F
+#6ED9A0
+#F6F8F7
+#5B666B
+#9BA7A5
+#5FB68C
+#6B877F
+
+*/
+body {
+	background: #2A363F;
+	/*
+	6699cc
+	099
+	background: #6699cc;
+	*/
+	font-family: Franklin Gothic;
+}
+
+a {
+	color: white;
+	text-decoration:none
+} 
 
 #content {
 	width: 100%;
@@ -8,62 +35,209 @@ body {
 	
 	display: flex;
 	justify-content: center;
-	align-content: center;
+	align-items: center;
+	
 }
 
 #title {
-	float: left;
 	font-family: Franklin Gothic;
 	font-size: 32px;
 }
 
 #home {
-	float: left;
+	font-family: Franklin Gothic;
+	font-size: 32px;
+	color: #FFF;
 }
 
-#download {
-	float: left;
+#spacer {
+	width: 100px;
 }
 
-#home, #download {
-	margin: 10px;
-	width: 30px;
-	height: 30px;
-}
-
-#header img {
-	max-height: 100%;
-}
 
 #header {
 	width: 100%;
-	height: 60px;
+	height: 40px;
 	position: absolute;
-	top: 0;
+	top: 20px;
 	left: 0;
-	background: #FFFFFF;
 	
-	display: flex;
-	justify-content: center;
-	align-items: center;
-}
-
-#header-content {
-	width: 90%;
-	height: 50px;
 	
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
 	
 
+}
+
+#header-content {
+	
+	width: 30%;
+	height: 50px;
+	
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	
+	
 
 }
 
+#uploadbutton {
+	cursor: pointer;
+	color: white;
+	background: #099;
+	border: none;
+	font-family: Franklin Gothic;
+	font-size: 24px;
+	height: 50px;
+}
+
+#uploadbutton:hover {
+	background: #00B3B3;
+}
+
+#uploadform {
+}
+
+.form-item {
+
+	padding: 10px;
+	padding-bottom: 5px;
+}
+
+.form-item-value {
+	width: 100%;
+	margin-top: 5px;
+}
+
+.form-item-title {
+	font-size: 18px;
+}
+
+#form-title, #video-title {
+	padding-left: 10px;
+	padding-right: 10px;
+	font-size: 24px;
+}
+
+#header-content div {
+	padding: 5px;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
 #main-body {
-	position: relative;
-	top: 100px;
-	background: #FFFFFF;
+	margin-top: -250px;
+	
+	color: #FFF;
+	/*
 	width: 500px;
 	height: 600px;
+	*/
+}
+
+#main-body-content {
+
+}
+
+hr {
+	color: #4F595D;
+	border-color: #4F595D;
+	border-style: solid;
+	margin-top: 0px;
+}
+
+
+/* ///////////// video styles ///////////// */
+
+#video-info {
+	min-width: 400px;
+}
+
+#video {
+	max-width: 800px;
+}
+video {
+	width: 100% !important;
+	height: auto !important;
+}
+
+#video-body {
+	display: flex;
+	justify-content: center;
+	color: #FFF;
+
+}
+
+#video-head {
+	overflow: hidden;
+}
+
+#video-title {
+	float: left;
+}
+
+#video-head img {
+	height: 26px;
+	float: right;
+	
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+.video-info-item {
+	width: 100%;
+	padding: 5px;
+	padding-left: 10px;
+	padding-right: 10px;
+	margin-bottom: 5px;
+	
+	overflow: hidden;
+}
+
+.video-info-title {
+	float: left;
+	width: 48%;
+}
+
+.video-info-value {
+	float: right;
+	width: 48%;
+}
+
+#modifiers-list, #children-list {
+	margin: 0px;
+	padding: 0px;
+
+}
+
+ul {
+	list-style-type: none;
+}
+
+/* ////////////////////////////////////////////////////////////////////////////////////// */
+#progressbar {
+    width: 100%;
+    height: 5px;
+
+    margin: 0px;
+    clear: both;
+	
+	background: #4F595D;
+	
+	-webkit-transition:width 0.6s ease;
+	-o-transition:width 0.6s ease;
+	transition:width 0.6s ease;
+}
+
+#progress {
+    background: #099; /*-- Color of the bar --*/
+    height: 5px;
+    width: 0%;
+    max-width: 100%;
+    float: left;
+    -webkit-transition:width 0.6s ease;
+	-o-transition:width 0.6s ease;
+	transition:width 0.6s ease;
 }

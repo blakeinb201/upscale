@@ -41,12 +41,12 @@ queueService.createQueueIfNotExists(queueName, function(error) {
 
 var NULLFUNC = function() {}
 
-
 // this creates a delay between function calls so the progress doesn't hit the DB too much
 function debounce(fn, delay) {
 	var timer = null;
 	return function () {
 		var context = this, args = arguments;
+		console.log(args);
 		clearTimeout(timer);
 		timer = setTimeout(function () {
 			fn.apply(context, args);
@@ -54,6 +54,20 @@ function debounce(fn, delay) {
 	};
 }
 
+// throttle is the one to use because it ignore calls between timeouts.
+// debounce resets a timeout and only calls when nothing is happening
+function throttle(func, delay) {
+        var timer = null;
+        return function () {
+			var context = this, args = arguments;
+			if (timer == null) {
+				timer = setTimeout(function () {
+				func.apply(context, args);
+				timer = null;
+			}, delay);
+		}
+	};
+}
 
 var storage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -182,7 +196,7 @@ app.post('/upload', upload.single('video'), function (req, res) {
 	// the ffmpeg object to process the request
 	var command = ffmpeg(filepath)
 		.size(resolution)
-		.on('progress', debounce(function(info) {
+		.on('progress', throttle(function(info) {
 				console.log('[' + mbID + '] ' + Math.floor(info.percent) + '%');
 				helpme.updateVideo_DB({blobID: mbID}, {progress: Math.floor(info.percent)}, NULLFUNC);
 			}, 1000)

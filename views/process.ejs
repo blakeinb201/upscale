@@ -10,9 +10,50 @@
 		<!-- https://upscaling.blob.core.windows.net/videofiles/ -->
 	</head>
 	<body>
+	<div id='content'>
+		<div id='header'>
+			<div id='header-content'>
+				<div id='home'><a href='/'>Upscale</a></div>
+			</div>
+		</div>
+		<div id='video-body'>
+			<div id='video-body-content'>
+			<div id='video-information'>No ID found</div>
+			
+			<div id='video-form' style='display:none'>
+				<div id="progressbar"><div id="progress"></div></div>
+					<form id="uploadform" enctype="multipart/form-data" action="/process" method="post">
+						<div class='form-item'>
+							<label for='select' class='form-item-title'>Resolution: </label>
+							<select name='resolution' class='form-item-value'>
+								<option value="352x240">240p</option>
+								<option value="480x360">360p</option>
+								<option value="640x480">480p (SD)</option>
+								<option value="1280x720">720p (HD)</option>
+								<option value="1920x1080">1080p (Full HD)</option>
+								<option value="2560x1440">1440p (QHD)</option>
+								<option value="3860x2160">2160p (4K)</option>
+							</select>
+						</div>
+						<div class='form-item'>
+							<input type="button" value="Process" id="uploadbutton" class='form-item-value'/>
+						</div>
+					</form>
+				</div>
+			</div><!-- #main-body-content -->
+		</div><!-- #main-body -->
+	</div><!-- #content -->
+	<script>
+		$(function() {
+			initVideo(JSON.parse('<%- JSON.stringify(videoObject) %>'));
+		});
+	</script>
+	<!--
 	<video src="https://upscaling.blob.core.windows.net/videofiles/<%= videoObject.filename %>" controls></video>
 	<script>
-	var thevid = JSON.parse('<%- JSON.stringify(videoObject) %>');
-	</script>
+		$(function() {
+			initVideo(JSON.parse('<%- JSON.stringify(videoObject) %>'));
+		});
+	</script> -->
 	</body>
 </html>

@@ -11,28 +11,40 @@
 	<div id='content'>
 		<div id='header'>
 			<div id='header-content'>
-				<div id='home'><a href='/'><img src='/images/home.png'></a></div>
-				<div id='title'>Upscaling</div>
-				<div id='download'><a href='/download/'><img src='/images/download.png'></a></div>
+				<!-- <div id='home'><a href='/'><img src='/images/home.png'></a></div> -->
+				<div id='home'><a href='/'><%= title %></a></div>
+				<!--<div id='title'>Upload a file</div>
+				<div id='spacer'></div> -->
+				<!-- <div id='download'><a href='/download/'><img src='/images/download.png'></a></div> -->
 			</div>
 		</div>
 		<div id='main-body'>
-			<div id='form-title'>Choose file and resolution</div>
-			<hr>
-			<form id="uploadForm" enctype="multipart/form-data" action="/upload" method="post">
-				<select name='resolution'>
-					<option value="352x240">240p</option>
-					<option value="480x360">360p</option>
-					<option value="640x480">480p (SD)</option>
-					<option value="1280x720">720p (HD)</option>
-					<option value="1920x1080">1080p (Full HD)</option>
-					<option value="2560x1440">1440p (QHD)</option>
-					<option value="3860x2160">2160p (4K)</option>
-				</select>
-				<input type="file" name="video" accept="video/*"/>
-				<input type="button" value="Upload" id="uploadbutton" disabled/>
-			</form>
-		<div id="imagePercent"></div>
+			<div id='main-body-content'>
+				<div id='form-title' >Choose file and resolution</div>
+
+				<div id="progressbar"><div id="progress"></div></div>
+				<form id="uploadform" enctype="multipart/form-data" action="/upload" method="post">
+					<div class='form-item'>
+						<label for='select' class='form-item-title'>Resolution: </label>
+						<select name='resolution' class='form-item-value' required>
+							<option value="352x240">240p</option>
+							<option value="480x360">360p</option>
+							<option value="640x480">480p (SD)</option>
+							<option value="1280x720">720p (HD)</option>
+							<option value="1920x1080">1080p (Full HD)</option>
+							<option value="2560x1440">1440p (QHD)</option>
+							<option value="3860x2160">2160p (4K)</option>
+						</select>
+					</div>
+					<div class='form-item'>
+						<label for='input' class='form-item-title'>File: </label>
+						<input type="file" name="video" accept="video/*" class='form-item-value' id='video-file' required/>
+					</div>
+					<div class='form-item'>
+						<input type="button" value="Upload" id="uploadbutton" disabled class='form-item-value'/>
+					</div>
+				</form>
+			</div><!-- #main-body-content -->
 		</div><!-- #main-body -->
 	</div><!-- #content -->
 	</body>
