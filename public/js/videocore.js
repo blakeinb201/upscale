@@ -5,8 +5,12 @@ $(function() {
 		var formData = {
 			resolution: $('#resolution')[0].value
 		};
+		
+		$('#uploadbutton').prop('disabled', true);
+		
 		console.log($('#resolution')[0].value);
 		$("#progressNew").width("50%");
+		
 		$.ajax({
 			url: '/process/' + window.video.blobID,  //Server script to process data
 			type: 'POST',
