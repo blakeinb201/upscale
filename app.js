@@ -45,13 +45,14 @@ var CPUInt = setInterval(function() {
 	console.log("CPU load: " + cpuload[0]);
 }, 60000);
 
+var NODELOAD = 0;
+
 //var MongoClient = mongodb.MongoClient;
 //var mongoURL = 'mongodb://CAB432:CAB432@ds048878.mongolab.com:48878/scalingMongo';
 
 console.log("SERVER START");
 
 var NULLFUNC = function() {}
-
 
 var BLOBPROGRESS = [];
 
@@ -210,6 +211,8 @@ app.post('/upload', upload.single('video'), function (req, res) {
 	var command = ffmpeg(filepath)
 		.size(resolution)
 		.on('start', function() {
+			NODELOAD++;
+			
 			BLOBPROGRESS[mbID] = {
 				progress: 0,
 				progInt: setInterval(function() {
@@ -223,6 +226,7 @@ app.post('/upload', upload.single('video'), function (req, res) {
 			BLOBPROGRESS[mbID].progress = Math.floor(info.percent);
 		})
 		.on('end', function() {
+			NODELOAD--;
 			
 			clearInterval(BLOBPROGRESS[mbID].progInt);
 			
@@ -385,6 +389,8 @@ app.post('/admin/:command', function (req, res) {
 
 // do some work when we get a message
 function processMessageQueue() {
+	if (NODELOAD > 2) return;
+	
 	queueService.getMessages(queueName, function(error, result, response) {
 		if(!error) {
 			// Message text is in messages[0].messagetext
@@ -414,6 +420,8 @@ function processMessageQueue() {
 								var command = ffmpeg(filepath)
 									.size(resolution)
 									.on('start', function() {
+										NODELOAD++;
+										
 										BLOBPROGRESS[blob] = {
 											progress: 0,
 											progInt: setInterval(function() {
@@ -427,6 +435,8 @@ function processMessageQueue() {
 										BLOBPROGRESS[blob].progress = Math.floor(info.percent);
 									})
 									.on('end', function() {
+										NODELOAD--;
+										
 										//console.log('done processing [' + blob + ']');
 										
 										clearInterval(BLOBPROGRESS[blob].progInt);
