@@ -6,6 +6,7 @@ $(function() {
 			resolution: $('#resolution')[0].value
 		};
 		console.log($('#resolution')[0].value);
+		$("#progressNew").width("50%");
 		$.ajax({
 			url: '/process/' + window.video.blobID,  //Server script to process data
 			type: 'POST',
@@ -13,6 +14,7 @@ $(function() {
 			data: formData,
 			success: function(data) {
 				if (typeof data.redirect == 'string') {
+					$("#progressNew").width("100%");
 					window.location = data.redirect;
 				}
 			},
@@ -24,7 +26,6 @@ $(function() {
 						var percentComplete = Math.floor((evt.loaded / evt.total) * 100);
 						//Do something with upload progress
 						//console.log(percentComplete * 100);
-						$("#progress").width(percentComplete + "%");
 						//$('#imagePercent').html(percentComplete + "%");
 					}
 				}, false);
