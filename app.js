@@ -207,9 +207,7 @@ app.post('/upload', upload.single('video'), function (req, res) {
 			BLOBPROGRESS[mbID] = {
 				progress: 0,
 				progInt: setInterval(function() {
-					helpme.updateVideo_DB({blobID: mbID}, {progress: BLOBPROGRESS[mbID].progress}, function() {
-						console.log('[' + mbID + '] ' + BLOBPROGRESS[mbID].progress + '%');
-					});
+					helpme.updateVideo_DB({blobID: mbID}, {progress: BLOBPROGRESS[mbID].progress}, NULLFUNC);
 				}, 1000)
 			};
 		})
@@ -222,18 +220,16 @@ app.post('/upload', upload.single('video'), function (req, res) {
 			
 			clearInterval(BLOBPROGRESS[mbID].progInt);
 			
-			console.log('done processing [' + mbID + ']');
+			//console.log('done processing [' + mbID + ']');
 			var newpath = './processed/' + mfname;
 			
 			blobClient.createBlockBlobFromLocalFile(VIDEOCONTAINER, mfname, newpath, function(error, result, response) {
 				if (!error) {
 					
-					helpme.updateVideo_DB({blobID: mbID}, {progress: 100}, function() {
-						console.log('final update [' + mbID + ']');
-					});
+					helpme.updateVideo_DB({blobID: mbID}, {progress: 100}, NULLFUNC);
 					
-					fs.unlink(newpath, function(err) {if (err) console.log(err);});
-					fs.unlink(filepath, function(err) {if (err) console.log(err);});
+					//fs.unlink(newpath, function(err) {if (err) console.log(err);});
+					//fs.unlink(filepath, function(err) {if (err) console.log(err);});
 					
 				} else console.log(error);
 			});
@@ -411,21 +407,32 @@ function processMessageQueue() {
 								
 								var command = ffmpeg(filepath)
 									.size(resolution)
-									.on('progress', throttle(function(info) {
-											//console.log('[' + blob + '] ' + Math.floor(info.percent) + '%');
-											helpme.updateVideo_DB({blobID: blob}, {progress: Math.floor(info.percent)}, NULLFUNC);
-										}, 1000)
-									)
+									.on('start', function() {
+										BLOBPROGRESS[blob] = {
+											progress: 0,
+											progInt: setInterval(function() {
+												helpme.updateVideo_DB({blobID: blob}, {progress: BLOBPROGRESS[blob].progress}, NULLFUNC);
+											}, 1000)
+										};
+									})
+									.on('progress', function(info) {
+										//console.log(BLOBPROGRESS[mbID]);
+										//console.log(info.percent);
+										BLOBPROGRESS[blob].progress = Math.floor(info.percent);
+									})
 									.on('end', function() {
 										//console.log('done processing [' + blob + ']');
+										
+										clearInterval(BLOBPROGRESS[blob].progInt);
+										
 										var newpath = './processed/' + videoRes.filename;
 										
 										blobClient.createBlockBlobFromLocalFile(VIDEOCONTAINER, videoRes.filename, newpath, function(error, esult, response) {
 											if (!error) {
 												helpme.updateVideo_DB({blobID: blob}, {progress: 100}, NULLFUNC);
 												
-												fs.unlink(newpath, function(err) {if (err) console.log(err);});
-												fs.unlink(filepath, function(err) {if (err) console.log(err);});
+												//fs.unlink(newpath, function(err) {if (err) console.log(err);});
+												//fs.unlink(filepath, function(err) {if (err) console.log(err);});
 												
 											} else console.log(error);
 										});
