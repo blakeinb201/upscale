@@ -10,5 +10,5 @@
 # @reboot /home/upscale/start.sh
 
 #start the app
-app=$HOME/upscale
+app=/home/upscale
 cd $app && forever start bin/www
