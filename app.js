@@ -14,6 +14,7 @@ var ffmpeg = require('fluent-ffmpeg');
 //var command = ffmpeg();
 
 var fs = require('fs');
+var os = require('os');
 
 var helpme = require('./helpme.js');
 
@@ -38,6 +39,11 @@ queueService.createQueueIfNotExists(queueName, function(error) {
 var queueInt = setInterval(function() {
 	processMessageQueue();
 }, 5000);
+
+var CPUInt = setInterval(function() {
+	var cpuload = os.loadavg();
+	console.log("CPU load: " + cpuload[0]);
+}, 60000);
 
 //var MongoClient = mongodb.MongoClient;
 //var mongoURL = 'mongodb://CAB432:CAB432@ds048878.mongolab.com:48878/scalingMongo';
