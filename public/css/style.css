@@ -257,12 +257,12 @@ video {
 
 .video-info-title {
 	float: left;
-	width: 48%;
+	width: 40%;
 }
 
 .video-info-value {
 	float: right;
-	width: 48%;
+	width: 59%;
 }
 
 #modifiers-list, #children-list {
