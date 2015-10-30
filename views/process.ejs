@@ -10,22 +10,25 @@
 		<!-- https://upscaling.blob.core.windows.net/videofiles/ -->
 	</head>
 	<body>
-	<div id='content'>
+	
 		<div id='header'>
 			<div id='header-content'>
 				<div id='home'><a href='/'>Upscale</a></div>
 			</div>
 		</div>
+	<div id='video-content'>
 		<div id='video-body'>
 			<div id='video-body-content'>
-			<div id='video-information'>No ID found</div>
+			<div id='video-information'><div style='text-align:center'>No ID found</div></div>
 			
 			<div id='video-form' style='display:none'>
-				<div id="progressbar"><div id="progress"></div></div>
-					<form id="uploadform" enctype="multipart/form-data" action="/process" method="post">
+			<hr>
+			<div id='form-title' >Modify current file</div>
+				<!--<div id="progressbar"><div id="progress"></div></div>-->
+					<form id="uploadform" action="/process" method="post">
 						<div class='form-item'>
 							<label for='select' class='form-item-title'>Resolution: </label>
-							<select name='resolution' class='form-item-value'>
+							<select name='resolution' class='form-item-value' id='resolution'>
 								<option value="352x240">240p</option>
 								<option value="480x360">360p</option>
 								<option value="640x480">480p (SD)</option>

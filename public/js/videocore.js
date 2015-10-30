@@ -1,10 +1,51 @@
 // document ready, init stuff here
 $(function() {
-
+	$("#uploadbutton").click(function(e) {
+		e.preventDefault();
+		var formData = {
+			resolution: $('#resolution')[0].value
+		};
+		console.log($('#resolution')[0].value);
+		$.ajax({
+			url: '/process/' + window.video.blobID,  //Server script to process data
+			type: 'POST',
+			// Form data
+			data: formData,
+			success: function(data) {
+				if (typeof data.redirect == 'string') {
+					window.location = data.redirect;
+				}
+			},
+			xhr: function() {
+				var xhr = new window.XMLHttpRequest();
+				//Upload progress
+				xhr.upload.addEventListener("progress", function(evt){
+					if (evt.lengthComputable) {
+						var percentComplete = Math.floor((evt.loaded / evt.total) * 100);
+						//Do something with upload progress
+						//console.log(percentComplete * 100);
+						$("#progress").width(percentComplete + "%");
+						//$('#imagePercent').html(percentComplete + "%");
+					}
+				}, false);
+				return xhr;
+			},
+			//Ajax events
+			/*
+			beforeSend: beforeSendHandler,
+			success: completeHandler,
+			error: errorHandler,*/
+			//Options to tell jQuery not to process data or worry about content-type.
+			cache: false,
+		});
+	});
 });
 
 function initVideo(videoObject) {
+	if (typeof videoObject.error === 'undefined') {
 	var htmlData = '';
+	
+	window.video = videoObject;
 	
 	htmlData += "<div id='video-head'><div id='video-title'>" + videoObject.name + "</div>";
 	if (videoObject.progress == 100) {
@@ -46,6 +87,8 @@ function initVideo(videoObject) {
 	
 	htmlData += "<div id='video-info'>";
 	
+	
+	
 	htmlData += createInfoNode('Blob ID', videoObject.blobID);
 	htmlData += createInfoNode('File name', videoObject.filename);
 	htmlData += createInfoNode('Original name', videoObject.originalname);
@@ -56,6 +99,7 @@ function initVideo(videoObject) {
 	htmlData += "</div>";
 	
 	$('#video-information').html(htmlData);
+	}
 };
 
 function createInfoNode(vidName, vidValue) {
@@ -81,7 +125,11 @@ function createModifiersList(modifiers) {
 }
 
 function createBlobLink(bID) {
-	return "<a href='/process/" + bID + "'>" + bID + "</a>";
+	if (bID != null) {
+		return "<a href='/process/" + bID + "'>" + bID + "</a>";
+	} else {
+		return bID;
+	}
 }
 
 function createDownloadLink(bID) {

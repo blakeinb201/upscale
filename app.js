@@ -35,24 +35,15 @@ queueService.createQueueIfNotExists(queueName, function(error) {
 	}
 });
 
+var queueInt = setInterval(function() {
+	processMessageQueue();
+}, 5000);
+
 //var MongoClient = mongodb.MongoClient;
 //var mongoURL = 'mongodb://CAB432:CAB432@ds048878.mongolab.com:48878/scalingMongo';
 
 
 var NULLFUNC = function() {}
-
-// this creates a delay between function calls so the progress doesn't hit the DB too much
-function debounce(fn, delay) {
-	var timer = null;
-	return function () {
-		var context = this, args = arguments;
-		console.log(args);
-		clearTimeout(timer);
-		timer = setTimeout(function () {
-			fn.apply(context, args);
-		}, delay);
-	};
-}
 
 // throttle is the one to use because it ignore calls between timeouts.
 // debounce resets a timeout and only calls when nothing is happening
@@ -133,11 +124,11 @@ app.post('/upload', upload.single('video'), function (req, res) {
 	
 	// req.file is the 'video' file
 	// req.body will hold the text fields, if there were any
-	console.log(req.body); // form fields
-    console.log(req.file); // form files
+	//console.log(req.body); // form fields
+    //console.log(req.file); // form files
 	
 	var resolution = req.body.resolution;
-	console.log(req.body.resolution);
+	//console.log(req.body.resolution);
 	
 	// video object
 	
@@ -197,17 +188,21 @@ app.post('/upload', upload.single('video'), function (req, res) {
 	var command = ffmpeg(filepath)
 		.size(resolution)
 		.on('progress', throttle(function(info) {
-				console.log('[' + mbID + '] ' + Math.floor(info.percent) + '%');
+				//console.log('[' + mbID + '] ' + Math.floor(info.percent) + '%');
 				helpme.updateVideo_DB({blobID: mbID}, {progress: Math.floor(info.percent)}, NULLFUNC);
 			}, 1000)
 		)
 		.on('end', function() {
-			console.log('done processing [' + mbID + ']');
+			//console.log('done processing [' + mbID + ']');
 			var newpath = './processed/' + mfname;
 			
 			blobClient.createBlockBlobFromLocalFile(VIDEOCONTAINER, mfname, newpath, function(error, result, response) {
 				if (!error) {
 					helpme.updateVideo_DB({blobID: mbID}, {progress: 100}, NULLFUNC);
+					
+					fs.unlink(newpath, function(err) {if (err) console.log(err);});
+					fs.unlink(filepath, function(err) {if (err) console.log(err);});
+					
 				} else console.log(error);
 			});
 		})
@@ -241,18 +236,74 @@ app.get('/process/:id', function (req, res) {
 	*/
 	var bID = req.params.id;
 	helpme.getVideo_DB({blobID: bID}, function(result) {
-		if (result) {
+		if (result.length) {
 			res.render('process', {
 				videoObject: result[0]
 			});
-			//console.log(result[0].name);
+		} else {
+			res.render('process', {
+				videoObject: {
+					name: 'Error',
+					error: 'BlobID not found.'
+				}
+			});
 		}
 	});
 });
 
+	/*
+	blobID: result[0].blobID,// ID
+	filename: result[0].filename,// filename (DI + ext)
+	originalname: result[0].originalname,// originalname + ext
+	name: result[0].name,// original name without ext
+	modifiers: result[0].modifiers,// what was done to this
+	parent: result[0].parent,// the parent that was modified to make this
+	children: result[0].children//,// any children made from this file
+	//link: BLOB_BASE_URL + result[0].filename
+	*/
 // start a new job of the specified video file
 app.post('/process/:id', function (req, res) {
-	console.log(req.body);
+	
+	//console.log(req.body);
+	
+	var bID = req.params.id;
+	var new_bID = helpme.generatePseudoID(6);
+	
+	var videoMSG = {
+		blobID: new_bID,
+		mods: req.body
+	};
+	
+	helpme.getVideo_DB({blobID: bID}, function(result) {
+		var parentVideo = result[0];
+		var ext = parentVideo.filename.slice((parentVideo.filename.lastIndexOf(".") - 1 >>> 0) + 2);
+
+		var vidObj = {
+			blobID: new_bID,
+			filename: new_bID + '.' + ext,
+			originalname: parentVideo.originalname,
+			name: parentVideo.name,//this is just the original name without ext.
+			progress: 0,
+			modifiers: req.body,//, req.body
+			parent: bID,
+			children: []
+		};
+		
+		helpme.addNewVideo_DB(vidObj, function() {
+			parentVideo.children.push(new_bID);
+			helpme.updateVideo_DB({blobID: bID}, {
+				children: parentVideo.children
+			}, NULLFUNC);
+			
+			queueService.createMessage(queueName, JSON.stringify(videoMSG), function(error) {
+				if (!error) {
+					//console.log("Message inserted");
+				} else console.log(error);
+			});
+			
+			res.json({redirect: '/process/' + new_bID});
+		});
+	});
 });
 
 // this is for ajax posts to update the progress of a job
@@ -285,6 +336,80 @@ app.get('/download/:id', function (req, res) {
 		}
 	});
 });
+
+/*
+app.get('/admin', function (req, res) {
+	res.render('admin', {
+		title: "Administration"
+	});
+}
+
+app.post('/admin/:command', function (req, res) {
+	var command = req.params.command;
+	console.log(command);
+}*/
+
+// do some work when we get a message
+function processMessageQueue() {
+	queueService.getMessages(queueName, function(error, result, response) {
+		if(!error) {
+			// Message text is in messages[0].messagetext
+			var message = result[0];
+			//console.log(message);
+			if (message) {
+				var messageText = JSON.parse(message.messagetext);
+				//console.log(messageText.mods.resolution);
+				queueService.deleteMessage(queueName, message.messageid, message.popreceipt, function(error, response) {
+					if(!error) {
+						//message deleted
+						//console.log("message deleted");
+						
+						var blob = messageText.blobID;
+						var resolution = messageText.mods.resolution;
+						
+						helpme.getVideo_DB({blobID: blob}, function(result) {
+							
+							var videoRes = result[0];
+							var ext = videoRes.filename.slice((videoRes.filename.lastIndexOf(".") - 1 >>> 0) + 2);
+							var parentVideo = videoRes.parent + '.' + ext;
+							
+							blobClient.getBlobToLocalFile(VIDEOCONTAINER, parentVideo, './uploads/' + parentVideo, function (err) {
+								
+								var filepath = './uploads/' + parentVideo;
+								
+								var command = ffmpeg(filepath)
+									.size(resolution)
+									.on('progress', throttle(function(info) {
+											//console.log('[' + blob + '] ' + Math.floor(info.percent) + '%');
+											helpme.updateVideo_DB({blobID: blob}, {progress: Math.floor(info.percent)}, NULLFUNC);
+										}, 1000)
+									)
+									.on('end', function() {
+										//console.log('done processing [' + blob + ']');
+										var newpath = './processed/' + videoRes.filename;
+										
+										blobClient.createBlockBlobFromLocalFile(VIDEOCONTAINER, videoRes.filename, newpath, function(error, esult, response) {
+											if (!error) {
+												helpme.updateVideo_DB({blobID: blob}, {progress: 100}, NULLFUNC);
+												
+												fs.unlink(newpath, function(err) {if (err) console.log(err);});
+												fs.unlink(filepath, function(err) {if (err) console.log(err);});
+												
+											} else console.log(error);
+										});
+									})
+									.on('error', function(err) {
+										console.log('an error happened: ' + err.message);
+									})
+									.save('./processed/' + videoRes.filename);
+							});
+						});
+					} else console.log(error);
+				});
+			}
+		} else console.log(error);
+	});
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

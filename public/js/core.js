@@ -4,6 +4,7 @@ $(function() {
 	
 	$("#uploadbutton").click(function(e) {
 		e.preventDefault();
+		$('#uploadbutton').prop('disabled', true);
 		var formData = new FormData($('form')[0]);
 		if ($('#video-file')[0].value != '') {
 			$.ajax({
