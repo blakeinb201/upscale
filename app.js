@@ -188,17 +188,25 @@ app.post('/upload', upload.single('video'), function (req, res) {
 	var command = ffmpeg(filepath)
 		.size(resolution)
 		.on('progress', throttle(function(info) {
-				//console.log('[' + mbID + '] ' + Math.floor(info.percent) + '%');
-				helpme.updateVideo_DB({blobID: mbID}, {progress: Math.floor(info.percent)}, NULLFUNC);
+				helpme.getVideo_DB({blobID: mbID}, function(result) {
+					if (result[0].progress < Math.floor(info.percent)) {
+						helpme.updateVideo_DB({blobID: mbID}, {progress: Math.floor(info.percent)}, function() {
+							console.log('[' + mbID + '] ' + Math.floor(info.percent) + '%');
+						});
+					}
+				});
 			}, 1000)
 		)
 		.on('end', function() {
-			//console.log('done processing [' + mbID + ']');
+			console.log('done processing [' + mbID + ']');
 			var newpath = './processed/' + mfname;
 			
 			blobClient.createBlockBlobFromLocalFile(VIDEOCONTAINER, mfname, newpath, function(error, result, response) {
 				if (!error) {
-					helpme.updateVideo_DB({blobID: mbID}, {progress: 100}, NULLFUNC);
+					
+					helpme.updateVideo_DB({blobID: mbID}, {progress: 100}, function() {
+						console.log('final update [' + mbID + ']');
+					});
 					
 					fs.unlink(newpath, function(err) {if (err) console.log(err);});
 					fs.unlink(filepath, function(err) {if (err) console.log(err);});
