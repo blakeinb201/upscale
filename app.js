@@ -42,23 +42,39 @@ var queueInt = setInterval(function() {
 //var MongoClient = mongodb.MongoClient;
 //var mongoURL = 'mongodb://CAB432:CAB432@ds048878.mongolab.com:48878/scalingMongo';
 
+console.log("SERVER START");
 
 var NULLFUNC = function() {}
+
+
+var BLOBPROGRESS = [];
+
 
 // throttle is the one to use because it ignore calls between timeouts.
 // debounce resets a timeout and only calls when nothing is happening
 function throttle(func, delay) {
-        var timer = null;
-        return function () {
-			var context = this, args = arguments;
-			if (timer == null) {
-				timer = setTimeout(function () {
+	var timer = null;
+	return function () {
+		var context = this, args = arguments;
+		if (timer == null) {
+			timer = setTimeout(function () {
 				func.apply(context, args);
 				timer = null;
 			}, delay);
 		}
 	};
 }
+/*
+throttle(function(info) {
+				helpme.getVideo_DB({blobID: mbID}, function(result) {
+					if (result[0].progress < Math.floor(info.percent)) {
+						helpme.updateVideo_DB({blobID: mbID}, {progress: Math.floor(info.percent)}, function() {
+							console.log('[' + mbID + '] ' + Math.floor(info.percent) + '%');
+						});
+					}
+				});
+			}, 2000)
+*/
 
 var storage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -187,17 +203,25 @@ app.post('/upload', upload.single('video'), function (req, res) {
 	// the ffmpeg object to process the request
 	var command = ffmpeg(filepath)
 		.size(resolution)
-		.on('progress', throttle(function(info) {
-				helpme.getVideo_DB({blobID: mbID}, function(result) {
-					if (result[0].progress < Math.floor(info.percent)) {
-						helpme.updateVideo_DB({blobID: mbID}, {progress: Math.floor(info.percent)}, function() {
-							console.log('[' + mbID + '] ' + Math.floor(info.percent) + '%');
-						});
-					}
-				});
-			}, 1000)
-		)
+		.on('start', function() {
+			BLOBPROGRESS[mbID] = {
+				progress: 0,
+				progInt: setInterval(function() {
+					helpme.updateVideo_DB({blobID: mbID}, {progress: BLOBPROGRESS[mbID].progress}, function() {
+						console.log('[' + mbID + '] ' + BLOBPROGRESS[mbID].progress + '%');
+					});
+				}, 1000)
+			};
+		})
+		.on('progress', function(info) {
+			//console.log(BLOBPROGRESS[mbID]);
+			//console.log(info.percent);
+			BLOBPROGRESS[mbID].progress = Math.floor(info.percent);
+		})
 		.on('end', function() {
+			
+			clearInterval(BLOBPROGRESS[mbID].progInt);
+			
 			console.log('done processing [' + mbID + ']');
 			var newpath = './processed/' + mfname;
 			
