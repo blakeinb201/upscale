@@ -210,7 +210,7 @@ app.post('/upload', upload.single('video'), function (req, res) {
 	// the ffmpeg object to process the request
 	var command = ffmpeg(filepath)
 		.size(resolution)
-		.withStrictExperimental()
+		.addOption('-strict', 'experimental')
 		.on('start', function() {
 			NODELOAD++;
 			
@@ -424,7 +424,7 @@ function processMessageQueue() {
 								
 								var command = ffmpeg(filepath)
 									.size(resolution)
-									.withStrictExperimental()
+									.addOption('-strict', 'experimental')
 									.on('start', function() {
 										NODELOAD++;
 										
