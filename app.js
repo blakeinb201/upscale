@@ -337,7 +337,7 @@ app.post('/process/:id', function (req, res) {
 			
 			queueService.createMessage(queueName, JSON.stringify(videoMSG), function(error) {
 				if (!error) {
-					//console.log("Message inserted");
+					console.log("Message inserted: " + JSON.stringify(videoMSG));
 				} else console.log(error);
 			});
 			
@@ -400,7 +400,7 @@ function processMessageQueue() {
 			//console.log(message);
 			if (message) {
 				var messageText = JSON.parse(message.messagetext);
-				//console.log(messageText.mods.resolution);
+
 				queueService.deleteMessage(queueName, message.messageid, message.popreceipt, function(error, response) {
 					if(!error) {
 						//message deleted
@@ -409,13 +409,15 @@ function processMessageQueue() {
 						var blob = messageText.blobID;
 						var resolution = messageText.mods.resolution;
 						
-						helpme.getVideo_DB({blobID: blob}, function(result) {
-							
+						helpme.getVideo_DB({blobID: blob}, function(result, err) {
+
 							var videoRes = result[0];
 							var ext = videoRes.filename.slice((videoRes.filename.lastIndexOf(".") - 1 >>> 0) + 2);
 							var parentVideo = videoRes.parent + '.' + ext;
 							
+							console.log("Downloading...");
 							blobClient.getBlobToLocalFile(VIDEOCONTAINER, parentVideo, './uploads/' + parentVideo, function (err) {
+								console.log("Finished!");
 								
 								var filepath = './uploads/' + parentVideo;
 								
@@ -455,7 +457,7 @@ function processMessageQueue() {
 											} else console.log(error);
 										});
 									})
-									.on('error', function(err) {
+									.on('error', function(err, stdout, stderr) {
 										console.log('an error happened [' + blob + ']: ' + err.message);
 										console.log(" [" + blob + "] stdout:\n" + stdout);
 										console.log(" [" + blob + "] stderr:\n" + stderr);

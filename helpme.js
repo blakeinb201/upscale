@@ -25,7 +25,7 @@ exports.addNewVideo_DB = function(videoObject, calling) {
 			// Insert some users
 			collection.insert(videoObject, function (err, result) {
 				db.close();
-				calling(result);
+				calling(result, err);
 			/*
 			function (err, result) {
 				if (err) {
@@ -63,7 +63,7 @@ exports.updateVideo_DB = function(searchTerm, newVideoObject, calling) {
 				}*/
 				//Close connection
 				db.close();
-				calling(numUpdated);
+				calling(numUpdated, err);
 			});
 		}
 	});
@@ -93,7 +93,7 @@ exports.getVideo_DB = function(searchTerm, calling) {
 				}*/
 				//Close connection
 				db.close();
-				calling(result);
+				calling(result, err);
 			});
 		}
 	});
