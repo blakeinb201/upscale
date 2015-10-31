@@ -245,7 +245,9 @@ app.post('/upload', upload.single('video'), function (req, res) {
 			});
 		})
 		.on('error', function(err) {
-			console.log('an error happened: ' + err.message);
+			console.log('an error happened [' + mbID + ']: ' + err.message);
+			console.log(" [" + mbID + "] stdout:\n" + stdout);
+			console.log(" [" + mbID + "] stderr:\n" + stderr);
 		})
 		.save('./processed/' + mfname);
 
@@ -454,7 +456,9 @@ function processMessageQueue() {
 										});
 									})
 									.on('error', function(err) {
-										console.log('an error happened: ' + err.message);
+										console.log('an error happened [' + mbID + ']: ' + err.message);
+										console.log(" [" + mbID + "] stdout:\n" + stdout);
+										console.log(" [" + mbID + "] stderr:\n" + stderr);
 									})
 									.save('./processed/' + videoRes.filename);
 							});
