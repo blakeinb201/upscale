@@ -11,4 +11,4 @@
 
 #start the app
 
-cd /home/upscale && sudo forever start bin/www
+cd /home/upscale && sudo forever -o out.log -e err.log start bin/www
