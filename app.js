@@ -456,9 +456,9 @@ function processMessageQueue() {
 										});
 									})
 									.on('error', function(err) {
-										console.log('an error happened [' + mbID + ']: ' + err.message);
-										console.log(" [" + mbID + "] stdout:\n" + stdout);
-										console.log(" [" + mbID + "] stderr:\n" + stderr);
+										console.log('an error happened [' + blob + ']: ' + err.message);
+										console.log(" [" + blob + "] stdout:\n" + stdout);
+										console.log(" [" + blob + "] stderr:\n" + stderr);
 									})
 									.save('./processed/' + videoRes.filename);
 							});
